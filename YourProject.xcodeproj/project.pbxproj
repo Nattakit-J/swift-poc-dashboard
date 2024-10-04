@@ -18,6 +18,8 @@
 		36B587E62BF73F1900D523D0 /* YourProjectUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B587E52BF73F1900D523D0 /* YourProjectUITestsLaunchTests.swift */; };
 		36B587F32BF73F4900D523D0 /* CustomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B587F22BF73F4900D523D0 /* CustomViewController.swift */; };
 		36B587F62BF73FF800D523D0 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 36B587F52BF73FF800D523D0 /* SnapKit */; };
+		46BABFDC2CAFCC5D002ADA78 /* DragAndDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BABFDB2CAFCC5D002ADA78 /* DragAndDropManager.swift */; };
+		46BABFDF2CAFCC64002ADA78 /* CollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BABFDD2CAFCC64002ADA78 /* CollectionViewCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +54,8 @@
 		36B587E32BF73F1900D523D0 /* YourProjectUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourProjectUITests.swift; sourceTree = "<group>"; };
 		36B587E52BF73F1900D523D0 /* YourProjectUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourProjectUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		36B587F22BF73F4900D523D0 /* CustomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomViewController.swift; sourceTree = "<group>"; };
+		46BABFDB2CAFCC5D002ADA78 /* DragAndDropManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAndDropManager.swift; sourceTree = "<group>"; };
+		46BABFDD2CAFCC64002ADA78 /* CollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,8 +109,10 @@
 			children = (
 				36B587C22BF73F1600D523D0 /* AppDelegate.swift */,
 				36B587C42BF73F1600D523D0 /* SceneDelegate.swift */,
+				46BABFDE2CAFCC64002ADA78 /* cells */,
 				36B587F22BF73F4900D523D0 /* CustomViewController.swift */,
 				36B587C62BF73F1600D523D0 /* ViewController.swift */,
+				46BABFDB2CAFCC5D002ADA78 /* DragAndDropManager.swift */,
 				36B587C82BF73F1600D523D0 /* Main.storyboard */,
 				36B587CB2BF73F1800D523D0 /* Assets.xcassets */,
 				36B587CD2BF73F1800D523D0 /* LaunchScreen.storyboard */,
@@ -130,6 +136,14 @@
 				36B587E52BF73F1900D523D0 /* YourProjectUITestsLaunchTests.swift */,
 			);
 			path = YourProjectUITests;
+			sourceTree = "<group>";
+		};
+		46BABFDE2CAFCC64002ADA78 /* cells */ = {
+			isa = PBXGroup;
+			children = (
+				46BABFDD2CAFCC64002ADA78 /* CollectionViewCell.swift */,
+			);
+			path = cells;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -269,7 +283,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46BABFDC2CAFCC5D002ADA78 /* DragAndDropManager.swift in Sources */,
 				36B587C72BF73F1600D523D0 /* ViewController.swift in Sources */,
+				46BABFDF2CAFCC64002ADA78 /* CollectionViewCell.swift in Sources */,
 				36B587C32BF73F1600D523D0 /* AppDelegate.swift in Sources */,
 				36B587C52BF73F1600D523D0 /* SceneDelegate.swift in Sources */,
 				36B587F32BF73F4900D523D0 /* CustomViewController.swift in Sources */,
