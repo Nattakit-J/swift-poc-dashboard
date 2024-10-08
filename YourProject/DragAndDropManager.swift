@@ -40,26 +40,15 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
             var snapshot = dataSource.snapshot()
             snapshot.deleteItems([draggedItem])
             
-            let destinationIndexPath = coordinator.destinationIndexPath ?? IndexPath(item: snapshot.itemIdentifiers.count, section: 0)
+            let dropPoint = coordinator.session.location(in: collectionView)
+            let destinationIndexPath = findNearestIndexPath(for: dropPoint)
             
-            if draggedItem.size == .small {
-                // Find the best position for the small item
-                let bestIndexPath = findBestPositionForSmallItem(draggedItem, nearIndexPath: destinationIndexPath, in: snapshot)
-                if bestIndexPath.item < snapshot.itemIdentifiers.count {
-                    snapshot.insertItems([draggedItem], beforeItem: snapshot.itemIdentifiers[bestIndexPath.item])
-                } else {
-                    snapshot.appendItems([draggedItem])
-                }
-                indexPaths.append(bestIndexPath)
+            if destinationIndexPath.item < snapshot.itemIdentifiers.count {
+                snapshot.insertItems([draggedItem], beforeItem: snapshot.itemIdentifiers[destinationIndexPath.item])
             } else {
-                // For medium items, just insert at the destination
-                if destinationIndexPath.item < snapshot.itemIdentifiers.count {
-                    snapshot.insertItems([draggedItem], beforeItem: snapshot.itemIdentifiers[destinationIndexPath.item])
-                } else {
-                    snapshot.appendItems([draggedItem])
-                }
-                indexPaths.append(destinationIndexPath)
+                snapshot.appendItems([draggedItem])
             }
+            indexPaths.append(destinationIndexPath)
             
             dataSource.apply(snapshot, animatingDifferences: true) {
                 self.collectionView.collectionViewLayout.invalidateLayout()
@@ -72,26 +61,44 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
         }
     }
     
-    private func findBestPositionForSmallItem(_ item: Item,
-                                              nearIndexPath indexPath: IndexPath,
-                                              in snapshot: NSDiffableDataSourceSnapshot<Section, Item>) -> IndexPath {
-        let items = snapshot.itemIdentifiers
+    private func findNearestIndexPath(for point: CGPoint) -> IndexPath {
+        print("🦆🟡 findNearestIndexPath")
         
-        // Check if we can pair with another small item
-        if indexPath.item > 0 && items[indexPath.item - 1].size == .small {
-            return IndexPath(item: indexPath.item, section: 0)
-        } else if indexPath.item < items.count - 1 && items[indexPath.item + 1].size == .small {
-            return indexPath
+        let itemCount = collectionView.numberOfItems(inSection: 0)
+        
+        if itemCount == 0 {
+            print("🦆🔵 Empty collection view")
+            return IndexPath(item: 0, section: 0)
         }
         
-        // If we can't pair, find the next available slot
-        for i in indexPath.item..<items.count {
-            if items[i].size == .medium {
-                return IndexPath(item: i, section: 0)
+        var closestIndexPath: IndexPath?
+        var closestDistance: CGFloat = CGFloat.greatestFiniteMagnitude
+        
+        for i in 0..<itemCount {
+            let indexPath = IndexPath(item: i, section: 0)
+            if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
+                let distance = abs(attributes.frame.midY - point.y)
+                if distance < closestDistance {
+                    closestDistance = distance
+                    closestIndexPath = indexPath
+                }
             }
         }
         
-        // If no slot found, append to the end
-        return IndexPath(item: items.count, section: 0)
+        if let closestIndexPath = closestIndexPath {
+            // If we're at the last item, return it (don't try to go beyond)
+            if closestIndexPath.item == itemCount - 1 {
+                print("🦆🟢 Nearest item is the last one: \(closestIndexPath)")
+                return closestIndexPath
+            }
+            
+            // Otherwise, return the next index path
+            let nextItem = closestIndexPath.item + 1
+            print("🦆🟢 Next nearest item will be at \(IndexPath(item: nextItem, section: 0))")
+            return IndexPath(item: nextItem, section: 0)
+        } else {
+            print("🦆🟣 Fallback: appending to the end")
+            return IndexPath(item: itemCount, section: 0)
+        }
     }
 }
