@@ -33,15 +33,24 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
     func collectionView(_ collectionView: UICollectionView,
                         performDropWith coordinator: UICollectionViewDropCoordinator) {
         var indexPaths: [IndexPath] = []
-        
+        var snapshot = dataSource.snapshot()
+
         for item in coordinator.items {
             guard let draggedItem = item.dragItem.localObject as? Item else { continue }
             
-            var snapshot = dataSource.snapshot()
             snapshot.deleteItems([draggedItem])
             
             let dropPoint = coordinator.session.location(in: collectionView)
-            let destinationIndexPath = findNearestIndexPath(for: dropPoint)
+            let destinationIndexPath: IndexPath
+            
+            if let proposedDestinationIndexPath = coordinator.destinationIndexPath,
+               isValidDestination(proposedDestinationIndexPath, for: dropPoint) {
+                // Use the system-provided destination if it's valid
+                destinationIndexPath = proposedDestinationIndexPath
+            } else {
+                // Fall back to our custom method if no valid destination is provided
+                destinationIndexPath = findNearestIndexPath(for: dropPoint)
+            }
             
             if destinationIndexPath.item < snapshot.itemIdentifiers.count {
                 snapshot.insertItems([draggedItem], beforeItem: snapshot.itemIdentifiers[destinationIndexPath.item])
@@ -49,10 +58,10 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
                 snapshot.appendItems([draggedItem])
             }
             indexPaths.append(destinationIndexPath)
-            
-            dataSource.apply(snapshot, animatingDifferences: true) {
-                self.collectionView.collectionViewLayout.invalidateLayout()
-            }
+        }
+        
+        dataSource.apply(snapshot, animatingDifferences: true) {
+            self.collectionView.collectionViewLayout.invalidateLayout()
         }
         
         // Perform the drop for all items
@@ -100,5 +109,20 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
             print("🦆🟣 Fallback: appending to the end")
             return IndexPath(item: itemCount, section: 0)
         }
+    }
+    
+    private func isValidDestination(_ indexPath: IndexPath, for dropPoint: CGPoint) -> Bool {
+        guard let attributes = collectionView.layoutAttributesForItem(at: indexPath) else {
+            return false
+        }
+        
+        let frame = attributes.frame
+        
+        // Calculate the valid range for x and y coordinates
+        let xRange = (frame.minX - frame.width/2)...(frame.maxX + frame.width/2)
+        let yRange = (frame.minY - frame.height/2)...(frame.maxY + frame.height/2)
+        
+        // Check if the drop point is within both ranges
+        return xRange.contains(dropPoint.x) && yRange.contains(dropPoint.y)
     }
 }
