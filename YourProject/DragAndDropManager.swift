@@ -38,18 +38,24 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
         for item in coordinator.items {
             guard let draggedItem = item.dragItem.localObject as? Item else { continue }
             
-            snapshot.deleteItems([draggedItem])
-            
             let dropPoint = coordinator.session.location(in: collectionView)
-            let destinationIndexPath = getDestinationIndexPath(for: draggedItem, 
+            let destinationIndexPath = getDestinationIndexPath(for: draggedItem,
                                                                proposedDestination: coordinator.destinationIndexPath, 
                                                                dropPoint: dropPoint)
             
-            if destinationIndexPath.item < snapshot.itemIdentifiers.count {
-                snapshot.insertItems([draggedItem], beforeItem: snapshot.itemIdentifiers[destinationIndexPath.item])
-            } else {
-                snapshot.appendItems([draggedItem])
+            guard let currentIndex = snapshot.indexOfItem(draggedItem) else { continue }
+            
+            if currentIndex != destinationIndexPath.item {
+                if destinationIndexPath.item < snapshot.itemIdentifiers.count {
+                    let toItem = snapshot.itemIdentifiers[destinationIndexPath.item]
+                    if toItem != draggedItem {
+                        snapshot.moveItem(draggedItem, beforeItem: toItem)
+                    }
+                } else if let lastItem = snapshot.itemIdentifiers.last, lastItem != draggedItem {
+                    snapshot.moveItem(draggedItem, afterItem: lastItem)
+                }
             }
+            
             indexPaths.append(destinationIndexPath)
         }
         
@@ -114,37 +120,50 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
         return closestIndexPath
     }
 
-
     private func isValidDestination(_ indexPath: IndexPath,
-                                    for dropPoint: CGPoint) -> Bool {
+                                    for dropPoint: CGPoint,
+                                    size: CellSize) -> Bool {
         guard let attributes = collectionView.layoutAttributesForItem(at: indexPath) else {
             return false
         }
         
         let frame = attributes.frame
         
-        // Calculate the valid range for x and y coordinates
-        let xRange = (frame.minX - frame.width/2)...(frame.maxX + frame.width/2)
-        let yRange = (frame.minY - frame.height/2)...(frame.maxY + frame.height/2)
-        
-        // Check if the drop point is within both ranges
-        return xRange.contains(dropPoint.x) && yRange.contains(dropPoint.y)
+        switch size {
+        case .small:
+            let xRange = (frame.minX - frame.width/2)...(frame.maxX + frame.width/2)
+            let yRange = (frame.minY - frame.height/2)...(frame.maxY + frame.height/2)
+
+            return xRange.contains(dropPoint.x) && yRange.contains(dropPoint.y)
+            
+        case .medium:
+            let xRange = (frame.minX - frame.width*1.5)...(frame.maxX + frame.width*1.5)
+            let yRange = (frame.minY - frame.height*1.5)...(frame.maxY + frame.height*1.5)
+            return xRange.contains(dropPoint.x) && yRange.contains(dropPoint.y)
+        }
     }
 
-        private func getDestinationForSmallItem(proposedDestination: IndexPath?,
+    private func getDestinationForSmallItem(proposedDestination: IndexPath?,
                                             dropPoint: CGPoint,
                                             closestIndexPath: IndexPath,
                                             itemCount: Int) -> IndexPath {
         if let proposedDestination = proposedDestination, 
            isValidDestination(proposedDestination,
-                              for: dropPoint) {
+            for: dropPoint,
+             size: .small) {
             print("🐥 Using proposed destination for small item: \(proposedDestination)")
             return proposedDestination
         } else {
-            let nextItem = min(closestIndexPath.item + 1,
-                               itemCount)
-            print("🐥 Next nearest item will be at \(IndexPath(item: nextItem, section: 0))")
-            return IndexPath(item: nextItem, section: 0)
+            if let lastItemAttributes = collectionView.layoutAttributesForItem(at: IndexPath(item: itemCount - 1, section: 0)),
+               dropPoint.y > lastItemAttributes.frame.maxY {
+                print("🐥 Dropping small item at the end: \(IndexPath(item: itemCount, section: 0))")
+                return IndexPath(item: itemCount, section: 0)
+            } else {
+                let nextItem = min(closestIndexPath.item + 1,
+                                   itemCount)
+                print("🐥 Next nearest item will be at \(IndexPath(item: nextItem, section: 0))")
+                return IndexPath(item: nextItem, section: 0)
+            }
         }
     }
 
@@ -154,17 +173,22 @@ class DragAndDropManager: NSObject, UICollectionViewDragDelegate, UICollectionVi
                                              itemCount: Int) -> IndexPath {
         if let proposedDestination = proposedDestination,
            isValidDestination(proposedDestination,
-                              for: dropPoint) {
-            print("🐓 Using proposed destination for medium item: \(proposedDestination)")
+                              for: dropPoint,
+                              size: .medium) {
+            print("🐥 Using proposed destination for small item: \(proposedDestination)")
             return proposedDestination
+        } else {
+            if let lastItemAttributes = collectionView.layoutAttributesForItem(at: IndexPath(item: itemCount - 1, section: 0)),
+               dropPoint.y > lastItemAttributes.frame.maxY {
+                print("🐥 Dropping small item at the end: \(IndexPath(item: itemCount, section: 0))")
+                return IndexPath(item: itemCount, section: 0)
+            } else {
+                let nextItem = min(closestIndexPath.item,
+                                   itemCount)
+                print("🐥 Next nearest item will be at \(IndexPath(item: nextItem, section: 0))")
+                return IndexPath(item: nextItem, section: 0)
+            }
         }
-        
-        let itemsPerRow = 2 // Assuming 2 small items per row
-        let currentRow = closestIndexPath.item / itemsPerRow
-        let targetRow = closestIndexPath.item >= itemCount - itemsPerRow ? currentRow + 1 : currentRow
-        let insertIndex = min(targetRow * itemsPerRow, itemCount)
-        
-        print("🐓 Inserting medium item at \(IndexPath(item: insertIndex, section: 0))")
-        return IndexPath(item: insertIndex, section: 0)
     }
 }
+
